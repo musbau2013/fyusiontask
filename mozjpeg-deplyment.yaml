@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mozjpeg-deployment
+  labels:
+    app: mozjpeg-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mozjpeg-app
+  template:
+    metadata:
+      labels:
+        app: mozjpeg-app
+    spec:
+      containers:
+      - name: mozjpeg-app
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - mountPath: /mozjpeg-master
+            name: config
+      volumes:
+        - name: config
+          configMap:
+            name: mozjpeg-config
+            items: 
+            - key: index.php
+              path: mozjpeg.conf
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mozjpeg-app
+  namespace: default
+spec:
+  selector:
+    app: mozjpeg-app
+  type: ClusterIP
+  sessionAffinity: None
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+  ports:
+  - name: mozjpeg-app
+    protocol: TCP
+    port: 8080
+    targetPort: 80
+    # If you set the `spec.type` field to `NodePort` and you want a specific port number,
+    # you can specify a value in the `spec.ports[*].nodePort` field.
+    # nodePort: 
